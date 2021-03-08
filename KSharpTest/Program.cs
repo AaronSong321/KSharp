@@ -8,6 +8,7 @@ namespace KSharpTest
         {
             var a = new Jmas.D3();
             a.Roar();
+            Jmas.Program.Main();
         }
     }
 }

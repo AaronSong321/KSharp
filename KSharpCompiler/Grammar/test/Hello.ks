@@ -6,12 +6,15 @@ namespace Jmas
 
 class Program {
     static fun Main() {
-        //System.Console.WriteLine("Hello, KSharp!");
-        "Hello world!"
+        const message = "Hello world!"
+        mutable i = 15
+        //System.Console.WriteLine("Hello, KSharp {i}!");
     }
 }
 
-infix fun To(int start, int end): IEnumerable {
-    
+infix fun To(start: int, end: int): IEnumerable {
+    //yield 1
+    //yield 2
+    //yield 3
 }
 

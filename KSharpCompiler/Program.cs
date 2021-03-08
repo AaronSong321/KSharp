@@ -1,52 +1,39 @@
 ﻿using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Threading.Tasks;
 using KSharpCompiler;
 using Mono.Cecil;
 
 
-// Console.WriteLine("Hello World!");
-// Compiler c = new();
-// RootCommand rootCmd = new("KSharp Compiler") {
-//     TreatUnmatchedTokensAsErrors = true
-// };
-// rootCmd.Handler = CommandHandler.Create(Compiler.CompileWithArgs)
-// string s = ".".GetProjectDir();
-// return await c.Compile(new []{Path.Combine(s, "Grammar", "test")}, new string[0]{});
-
-// class Program
-// {
-//     static async ValueTask<int> Main(string[] src, string dst, string? outputFileName, string target)
-//     {
-//         CompilerArguments args = new CompilerArguments() {
-//             src = src,
-//             target = dst,
-//             outputFileName = outputFileName,
-//             moduleKind = target switch {
-//                 "library" => ModuleKind.Dll,
-//                 "exe" => ModuleKind.Console,
-//                 _ => throw new Exception()
-//             }
-//         };
-//         return await new Compiler().Compile(args);
-//     }
-//     
-// }
-
-class Program2
+class Program
 {
-    static void Main(string[] src, string dst, string? outputFileName, string target)
+    static async Task<int> Main(string[] args)
     {
-        CompilerArguments args = new CompilerArguments() {
-            src = src,
-            target = dst,
-            outputFileName = outputFileName,
-            moduleKind = target switch {
-                "library" => ModuleKind.Dll,
-                "exe" => ModuleKind.Console,
-                _ => throw new Exception()
-            }
+        var cm = new RootCommand {
+            new Option<string[]>("--src") { AllowMultipleArgumentsPerToken = true },
+            new Option<string>("--out"),
+            new Option<string>("--target", ()=>"exe") { IsRequired = false },
+            new Option<bool>("--bdkslib", ()=>true, "set to false when building KSharp standard library") { IsRequired = false},
         };
-        var f = new Compiler().Compile(args);
-        f.GetAwaiter().GetResult();
+        int rt = -1;
+        cm.Handler = CommandHandler.Create<string[],string,string,bool>((src, @out, target, bdkslib) => {
+            CompilerArguments ar = new CompilerArguments() {
+                src = src,
+                @out = @out,
+                moduleKind = target switch {
+                    "library" => ModuleKind.Dll,
+                    "exe" => ModuleKind.Console,
+                    _ => throw new Exception()
+                },
+                buildKSharpStdLib = bdkslib
+            };
+            var f = new Compiler().Compile(ar);
+            rt = f.GetAwaiter().GetResult();
+            if (f.Exception != null)
+                Console.WriteLine(f.Exception);
+        });
+        await cm.InvokeAsync(args);
+        return rt;
     }
 }

@@ -8,7 +8,7 @@ file
 | globalFile
 ;
 
-normalFile: (usingDirectives directiveExtraDelimiter?)? sectionPause (filescopeNs directiveExtraDelimiter?)? sectionPause filescopeDeclares? sectionPause;
+normalFile: (usingDirectives directiveExtraDelimiter?)? sectionPause (fileScopeNs directiveExtraDelimiter?)? sectionPause fileScopeDeclares? sectionPause;
 
 globalFile: (usingDirectives directiveExtraDelimiter?)? sectionPause globalAttributes? sectionPause expressions sectionPause;
 
@@ -17,7 +17,7 @@ globalFile: (usingDirectives directiveExtraDelimiter?)? sectionPause globalAttri
 identifier
 : Identifier
 | SoftKeyword
-| AT (Identifier | SoftKeyword)
+| AT (Identifier | Keyword)
 ;
 
 // 2.2 separators
@@ -37,7 +37,7 @@ directiveExtraDelimiter
 
 type: typeExpression;
 typeExpression: lowestPriorityTypeExpression;
-lowestPriorityTypeExpression: postfixType;
+lowestPriorityTypeExpression: prefixType;
 //lowestPriorityTypeExpression: tupleType;
 //
 //tupleType
@@ -45,18 +45,29 @@ lowestPriorityTypeExpression: postfixType;
 //| tupleType OPASTEROID functionOrPointerType
 //;
 
+prefixType
+: postfixType 
+| parenthesisedTypeExpression
+;
+
 postfixType
+: innerPostfixType
+| innerPostfixType typeExpressionOuterPostfix
+;
+
+innerPostfixType
 : atomType
-| postfixType typeExpressionPostfix;
+| innerPostfixType DOT atomType
+;
 
 atomType
-: parenthesisedTypeExpression
+: decltypeExpression
 | keywordType
-| qualifiedTypeName
+| gidType
 ;
 
-qualifiedTypeName: (GLOBAL DOT)? (genericableIdentifier DOT)* genericableIdentifier
-;
+decltypeExpression: DECLTYPE LPAREN tokenPause expression tokenPause RPAREN;
+gidType: (gid DOT)* gid;
 
 parenthesisedTypeExpression: LPAREN NL* type NL* RPAREN;
 
@@ -76,7 +87,7 @@ keywordType
 | UNIT
 ;
 
-typeExpressionPostfix
+typeExpressionOuterPostfix
 : pointerTypePostfix
 | arrayTypePostfix
 | nullableTypePostfix
@@ -133,46 +144,116 @@ argumentPassMode: IN | OUT;
 primaryExpression
 : literalExpression
 | interpolatedString
-| genericableIdentifier
+| gid
 | keywordExpression
 | parenthesisedExpression
 | flowExpression
+| localVarDeclare
 ;
 
 // 3.3.1 basic expressions
 
-expression: primaryExpression;
+expression: lowestPriorityExpression;
+
+lowestPriorityExpression
+: assignmentExpression;
+
+assignmentExpression
+: infixCallExpression
+| infixCallExpression ASSIGN assignmentExpression
+;
+
+infixCallExpression
+//: flowInvokeExpression
+: prefixExpression
+| infixCallExpression identifier prefixExpression
+;
+
+//invokeExpression
+//: prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression
+//| prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression prefixExpression
+//;
+//invokeExpression: prefixExpression;
+
+prefixExpression
+: postfixExpression
+| awaitExpression
+| refExpression
+| prefixUnaryOperator prefixExpression
+;
+
+awaitExpression: AWAIT prefixExpression;
+
+refExpression: REF prefixExpression;
+
+prefixUnaryOperator
+: OPNOT
+| OPADDONE
+| OPSUBONE
+// TILDE
+;
+
+postfixExpression
+: primaryExpression
+| postfixExpression postfixSuffix
+;
+
+postfixSuffix
+: methodInvokeSuffix
+| elementAccessSuffix
+| memberAccessSuffix
+| delegateinvokeSuffix
+;
+
 
 expressions
 : expression
 | expressions expSep expression
 ;
 
-literalExpression: Literal;
+//literalExpression: Literal;
 
 interpolatedString: DOUBLEQUOTE interpStringPart* IS_DOUBLEQUOTE;
 interpStringPart
 : IS_EscapeChar
 | IS_NormalString
-| IS_DOUBLECURL
+| IS_DOUBLELCURL
 | interpValue
 ;
 
-interpValue: IS_LCURL expression RCURL;
+interpValue: IS_LCURL expression interpFormat? RCURL;
 
-genericableIdentifier: identifier typeArgumentList?;
+interpFormat: COLON interpFormatPart+ ISF_RCURL;
+
+interpFormatPart: ISF_NormalChar | ISF_DOUBLERCURL;
+
+gid: identifier typeArgumentList?;
 
 parenthesisedExpression: LPAREN NL* expression NL* RPAREN;
 
-memberAccessSuffix: DOT genericableIdentifier;
+dotOperator
+: DOT
+| QUESTION DOT 
+| OPNOT DOT 
+| OPNOT OPNOT DOT 
+;
 
-//invocationSuffix
-//: LPAREN NL* argumentList? NL* RPAREN
-//| implicitParameterLambdaExpression
-//| LPAREN NL* argumentList? NL* RPAREN NL* implicitParameterLambdaExpression
-//;
+memberAccessSuffix: dotOperator gid;
 
-elementAccessSuffix: DOT parameterPropertyName? LSQUARE NL* argumentList NL* RSQUARE;
+delegateinvokeSuffix
+: argumentList
+| argumentList? invokePostfixLambda
+;
+
+methodInvokeSuffix: memberAccessSuffix delegateinvokeSuffix;
+
+elementAccessSuffix: dotOperator gid? LSQUARE NL* argumentList NL* RSQUARE;
 
 parameterPropertyName
 : identifier
@@ -193,7 +274,7 @@ backupAccess: FIELD;
 valueAccess: VALUE;
 
 baseAccess
-: BASE DOT genericableIdentifier
+: BASE DOT gid
 | BASE DOT parameterPropertyName? LSQUARE NL* argumentList NL* RSQUARE
 ;
 
@@ -202,28 +283,113 @@ baseAccess
 flowExpression
 : ifExpression
 | forExpression
+| blockExpression
+| whileExpression
+| returnExpression
+| yieldExpression
 ;
 
 ifExpression
-: ifClause tokenPause ifResult (tokenPause elifClause tokenPause ifResult)* (elseKeyword tokenPause elseResult)?
-|;
+: ifClause tokenPause controlBody (tokenPause elifClause tokenPause controlBody)* (elseKeyword tokenPause controlBody)?
+;
 ifClause: ifKeyword tokenPause binaryPredicate;
 ifKeyword: IF | IFNOT;
 binaryPredicate: expression;
-ifResult
-: THEN tokenPause expression
-| LCURL tokenPause expressions tokenPause RCURL
+controlBody
+: blockExpression
+| lambdaBody
 ;
+
 elifClause: elifKeyword tokenPause binaryPredicate;
 elifKeyword: ELIF | ELIFNOT;
 elseKeyword: ELSE;
-elseResult
-: expression
-| LCURL tokenPause expressions tokenPause RCURL
-;
 
 forExpression
-: 
+: FOR tokenPause controlFlowVarDeclare tokenPause IN iteratedValue tokenPause controlBody
+;
+iteratedValue: expression;
+
+// 3.3.3 var declare expression
+
+varTypeDeclare: identifier localVarTypeAnnotator;
+varValueDeclare
+: identifier localVarTypeAnnotator tokenPause initValue
+| nameOrDiscard tokenPause initValue;
+
+nameOrDiscard: identifier | DISCARD;
+
+initValue
+: ASSIGN expression
+;
+
+controlFlowVarDeclare: varTypeDeclare;
+
+localVarDeclare
+: localVarModifiers varTypeDeclare
+| localVarModifiers varValueDeclare
+;
+localVarModifiers: localVarMutabilityMod;
+localVarMutabilityMod: MUTABLE | CONST | CONSTEXPR | CONSTEVAL | CONSTINIT;
+
+blockExpression: LCURL tokenPause expressions? tokenPause RCURL;
+lambdaBody: DOUBLEARROW tokenPause expression;
+
+whileExpression
+: WHILE binaryPredicate tokenPause controlBody
+| WHILE tokenPause controlBody
+;
+
+returnExpression
+: RETURN 
+| RETURN expression
+;
+
+yieldExpression
+: YIELD expression
+| YIELD BREAK
+;
+
+// 3.3.4 lambda
+
+invokePostfixLambda: lambdaExpression;
+
+lambdaExpression
+: FUN lambdaParameterList tokenPause lambdaBody
+| FUN lambdaParameterList tokenPause blockExpression
+| LCURL overloadableOperator RCURL
+; 
+
+lambdaParameterList
+: LPAREN lambdaParameters RPAREN
+;
+lambdaParameters
+: lambdaParameter?
+| (lambdaParameter commaSep)* lambdaParameter
+;
+lambdaParameter: parameterMod nameOrDiscard;
+
+// 3.3.5 literal expression
+
+literalExpression
+: integerLiteral
+| realLiteral
+| nullLiteral
+| boolLiteral
+;
+
+integerLiteral
+: IntegerLiteral 
+| HexLiteral
+| BinLiteral
+;
+
+realLiteral
+: RealLiteral 
+;
+
+nullLiteral: NULL;
+
+boolLiteral: TRUE | FALSE;
 
 // 4.1 using
 
@@ -238,32 +404,32 @@ usingDirective
 | usingTypeAlias
 ;
 
-usingNs: USING qualifiedIdentifier;
+usingNs: USING qid;
 
-qualifiedIdentifier
+qid
 : identifier
-| qualifiedIdentifier DOT identifier
+| qid DOT identifier
 ;
 
 usingStaticType: USING STATIC type;
 
 usingTypeAlias: USING identifier ASSIGN type;
 
-filescopeNs: NAMESPACE qualifiedIdentifier;
+fileScopeNs: NAMESPACE qid;
 
 // 4.2 block declarations
 
-filescopeDeclares
-: filescopeDeclare
-| filescopeDeclares sectionPause filescopeDeclare;
+fileScopeDeclares
+: fileScopeDeclare
+| fileScopeDeclares sectionPause fileScopeDeclare;
 
-filescopeDeclare
+fileScopeDeclare
 : nsDeclare
 | typeDeclare
 | globalFunctionDeclare
 ;
 
-nsDeclare: NAMESPACE qualifiedIdentifier tokenPause LCURL tokenPause nsScopeDeclares tokenPause RCURL;
+nsDeclare: NAMESPACE qid tokenPause LCURL tokenPause nsScopeDeclares tokenPause RCURL;
 
 nsScopeDeclares
 : nsScopeDeclare
@@ -279,7 +445,11 @@ typeDeclare
 : classDeclare
 ;
 
-classDeclare: CLASS identifier tokenPause LCURL tokenPause typeScopeDeclares tokenPause RCURL;
+classDeclare: classModifiers tokenPause CLASS identifier tokenPause LCURL tokenPause typeScopeDeclares tokenPause RCURL;
+
+classModifiers: externMod? accessibilityMod? typeSealedMod?;
+
+typeSealedMod: STATIC | ABSTRACT | SEALED | OPEN;
 
 typeScopeDeclares
 : typeScopeDeclare
@@ -302,10 +472,9 @@ globalFunctionDeclare
 | extensionMethodDeclare
 ;
 
-commonFunctionHeader: tokenPause parameterList tokenPause typeAnnotater? tokenPause;
+commonFunctionHeader: tokenPause parameterList tokenPause retTypeAnnotator? tokenPause;
 commonFunctionBody
-: LCURL tokenPause functionBody tokenPause RCURL
-| DOUBLEARROW expression
+: blockExpression
 ;
 
 methodDeclare: methodModifiers FUN memberName commonFunctionHeader commonFunctionBody; 
@@ -315,7 +484,16 @@ memberName
 | type DOT identifier
 ;
 
-typeAnnotater: COLON tokenPause type;
+//typeAnnotator: COLON tokenPause type;
+localVarTypeAnnotator: COLON tokenPause localVarRefMod type;
+localVarRefMod: REF?;
+parameterTypeAnnotator: COLON tokenPause parameterMod type;
+parameterMod: (IN|OUT|REF)?;
+retTypeAnnotator: COLON tokenPause retTypeMod type;
+retTypeMod
+: REF?
+| REF READONLY
+;
 
 normalFunctionDeclare: globalFunModifiers FUN identifier commonFunctionHeader commonFunctionBody;
 
@@ -325,6 +503,7 @@ overloadableOperator
 : ovUnaryOperator
 | ovBinaryOperator
 ;
+
 ovUnaryOperator
 : OPADD 
 | OPSUB
@@ -355,35 +534,29 @@ infixDeclare: globalFunModifiers INFIX FUN tokenPause identifier commonFunctionH
 
 extensionMethodDeclare: globalFunModifiers FUN type DOT identifier commonFunctionHeader commonFunctionBody;
 
-parameterList: LPAREN (tokenPause parameters)? tokenPause RPAREN;
+parameterList: LPAREN tokenPause parameters tokenPause RPAREN;
 
 parameters
-: fixedParameters
+: fixedParameters?
 | fixedParameters commaSep parameterArray
 | parameterArray
 ;
 
 fixedParameters: fixedParameter (commaSep fixedParameter)*;
 
-fixedParameter: attributes? NL* parameterModeModifier? parameterDeclarationBody;
+fixedParameter: attributes? NL* parameterDeclarationBody;
 
 parameterDeclarationBody
-: parameterInvokeName parameterLocalName typeAnnotater? defaultArgument
-| parameterInvokeName parameterLocalName typeAnnotater
-| DISCARD typeAnnotater
+: parameterLocalName parameterTypeAnnotator? defaultArgument
+| parameterLocalName parameterTypeAnnotator
+| DISCARD parameterTypeAnnotator
 ;
 parameterInvokeName: identifier | DISCARD;
 parameterLocalName: identifier;
 
-parameterModeModifier: REF|OUT|IN;
-
-returnTypeModeModifier: REF| REF READONLY;
-
 defaultArgument: ASSIGN expression;
 
-parameterArray: attributes? NL* identifier COLON PARAMS type;
-
-functionBody: expressions?;
+parameterArray: attributes? NL* PARAMS parameterDeclarationBody;
 
 // 4.4 modifiers
 
@@ -391,36 +564,31 @@ functionBody: expressions?;
 
 globalFunModifiers: externMod? asyncMod?;
 
-methodModifiers: externMod? newMod? staticMod? overrideMod? asyncMod?;
+methodModifiers: externMod? accessibilityMod? staticMod? newMod? mutableMod? overrideMod? asyncMod?;
 
-methodModifier
-: staticMod
-| mutableMod
-| overrideMod
-;
-
+accessibilityMod: PUBLIC | PROTECTED | PRIVATE | INTERNAL | INTERNAL PROTECTED | PRIVATE PROTECTED;
 externMod: EXTERN;
 staticMod: STATIC;
-mutableMod: MUTABLE | IMMUTABLE | PURE;
-overrideMod: OVERRIDE | SEALED | OPEN;
+mutableMod: MUTABLE | IMMUTABLE | PURE | CONSTEXPR | CONSTEVAL;
+overrideMod: OVERRIDE | SEALED | OPEN | ABSTRACT;
 newMod: NEW;
 asyncMod: ASYNC;
 
 // 5 attributes
 
 globalAttributes: attribute;
-attributes: attributeSection (NL* attributeSection)*;
+attributes: attributeSection (tokenPause attributeSection)*;
 
 attributeSection: LSQUARE attributeTargetSpecifier? attributeList COMMA? RSQUARE;
 
 attributeTargetSpecifier: attributeTarget COLON;
 
-attributeTarget: FIELD| PROP| FUN| INDEXER| EVENT;
+attributeTarget: FIELD| PROP | FUN | INDEXER | EVENT | RETURN;
 
 attributeList: attribute (NL* COMMA NL* attribute)*;
 
 attribute: attributeName attributeArguments?;
 
-attributeName: qualifiedTypeName;
+attributeName: type;
 
 attributeArguments: argumentList;

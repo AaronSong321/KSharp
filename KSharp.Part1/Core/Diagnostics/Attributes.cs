@@ -7,12 +7,7 @@ using System.Threading.Tasks;
 
 namespace KSharp
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public sealed class ThreadSafeAttribute : Attribute
-    {
-        
-    }
-    
+
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class UnionAttribute : Attribute
     {

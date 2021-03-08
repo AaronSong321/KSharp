@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-
 namespace KSharp
 {
     public static class LinqExtensions
@@ -42,6 +41,13 @@ namespace KSharp
                 func(elem, ++index);
             }
         }
+
+        public static IEnumerable<T> WhereNot<T>(this IEnumerable<T> collection, Func<T, bool> func)
+        {
+            foreach (var elem in collection)
+                if (!func(elem))
+                    yield return elem;
+        }
     }
 
     public static class ArrayLinqExtensions
@@ -62,7 +68,7 @@ namespace KSharp
                 if (predicate(collection[i]))
                     g[num++] = collection[i];
             T[] res = new T[num];
-            System.Array.Copy(g, res, num);
+            Array.Copy(g, res, num);
             return res;
         }
         public static T[] NonNull<T>(this T?[] collection)
@@ -74,16 +80,16 @@ namespace KSharp
                 if (collection[i] != null)
                     g[num++] = collection[i]!;
             T[] res = new T[num];
-            System.Array.Copy(g, res, num);
+            Array.Copy(g, res, num);
             return res;
         }
     }
 
-    public static unsafe class ListLinqExtensions
+    public static class ListLinqExtensions
     {
-        public static System.Collections.Generic.List<T> Filter<T>(this System.Collections.Generic.List<T> collection, Predicate<T> predicate)
+        public static List<T> Filter<T>(this List<T> collection, Predicate<T> predicate)
         {
-            System.Collections.Generic.List<T> g = new List<T>(collection.Count);
+            List<T> g = new List<T>(collection.Count);
             foreach (var elem in collection)
                 if (predicate(elem))
                     g.Add(elem);
@@ -97,9 +103,9 @@ namespace KSharp
         //             g.Add(elem);
         //     return g;
         // }
-        public static System.Collections.Generic.List<T> FilterIndex<T>(this System.Collections.Generic.List<T> collection, Func<T, int, bool> predicate)
+        public static List<T> FilterIndex<T>(this List<T> collection, Func<T, int, bool> predicate)
         {
-            System.Collections.Generic.List<T> g = new List<T>(collection.Count);
+            List<T> g = new List<T>(collection.Count);
             int index = -1;
             foreach (var elem in collection) {
                 if (predicate(elem, ++index))
@@ -107,18 +113,18 @@ namespace KSharp
             }
             return g;
         }
-        public static System.Collections.Generic.List<(T, T)> Filter2<T>(IList<T> c1, IList<T> c2, Func<T, T, bool> predicate)
+        public static List<(T, T)> Filter2<T>(IList<T> c1, IList<T> c2, Func<T, T, bool> predicate)
         {
-            System.Collections.Generic.List<(T, T)> g = new List<(T, T)>(c1.Count);
+            List<(T, T)> g = new List<(T, T)>(c1.Count);
             for (int i = 0; i < c1.Count; ++i)
                 if (predicate(c1[i], c2[i]))
                     g.Add((c1[i], c2[i]));
             return g;
         }
 
-        public static System.Collections.Generic.List<U> Map<T, U>(this System.Collections.Generic.List<T> collection, Func<T, U> mapMethod)
+        public static List<U> Map<T, U>(this List<T> collection, Func<T, U> mapMethod)
         {
-            System.Collections.Generic.List<U> g = new List<U>(collection.Count);
+            List<U> g = new List<U>(collection.Count);
             foreach (var elem in collection)
                 g.Add(mapMethod(elem));
             return g;
@@ -130,52 +136,62 @@ namespace KSharp
         //         g.Add(mapMethod(elem));
         //     return g;
         // }
-        public static System.Collections.Generic.List<TResult> MapIndex<T, TResult>(this System.Collections.Generic.List<T> collection, Func<T, int, TResult> mapMethod)
+        public static List<TResult> MapIndex<T, TResult>(this List<T> collection, Func<T, int, TResult> mapMethod)
         {
-            System.Collections.Generic.List<TResult> g = new List<TResult>(collection.Count);
+            List<TResult> g = new List<TResult>(collection.Count);
             int i = -1;
             foreach (var elem in collection) {
                 g.Add(mapMethod(elem, ++i));
             }
             return g;
         }
-        public static System.Collections.Generic.List<TResult> Map2<T1, T2, TResult>(IList<T1> c1, IList<T2> c2, Func<T1, T2, TResult> met)
+        public static List<TResult> Map2<T1, T2, TResult>(IList<T1> c1, IList<T2> c2, Func<T1, T2, TResult> met)
         {
             if (c1.Count != c2.Count)
                 throw new ArgumentException("System.Collections.Generic.List count mismatch.");
-            System.Collections.Generic.List<TResult> g = new List<TResult>(c1.Count);
+            List<TResult> g = new List<TResult>(c1.Count);
             for (int i = 0; i < c1.Count; ++i) {
                 g.Add(met(c1[i], c2[i]));
             }
             return g;
         }
-        public static System.Collections.Generic.List<T> NonNull<T>(System.Collections.Generic.List<T> collection)
+        public static List<T> NonNull<T>(this List<T> collection)
             where T : class
         {
-            System.Collections.Generic.List<T> g = new List<T>(collection.Count);
+            List<T> g = new List<T>(collection.Count);
             foreach (var elem in collection) {
                 if (elem != null)
                     g.Add(elem!);
             }
             return g;
         }
-        public static System.Collections.Generic.List<T> Flatten<T>(System.Collections.Generic.List<System.Collections.Generic.List<T>> collection)
+        public static List<T> Flatten<T>(this IList<List<T>> collection)
         {
-            System.Collections.Generic.List<T> g = new List<T>();
+            List<T> g = new List<T>();
             foreach (var p in collection) {
                 foreach (var elem in p)
                     g.Add(elem);
             }
             return g;
         }
+        public static void RemoveAt<T>(this IList<T> collection, Index index)
+        {
+            collection.RemoveAt(index.IsFromEnd ? collection.Count - index.Value : index.Value);
+        }
     }
 
     public static class DictionaryLinqExtensions
     {
-        public static U FindOrAddNew<T, U>(this Dictionary<T, U> dic, T key)
+        public static U FindOrAddNew<T, U>(this IDictionary<T, U> dic, T key)
             where U: new() where T: notnull
         {
-            return dic.TryGetValue(key, out var value) ? value : new U();
+            if (dic.TryGetValue(key, out var value))
+                return value;
+            else {
+                var b = new U();
+                dic[key] = b;
+                return b;
+            }
         }
     }
 

@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
-namespace Jmas
+namespace KSharpCompiler
 {
     public static class ReflectionHelper
     {
@@ -30,6 +30,7 @@ namespace Jmas
         }
         public static void SetValueMember<T>(object obj, IEnumerable<MemberInfo> members, T value)
         {
+            #nullable disable
             foreach (var memberInfo in members) {
                 if (memberInfo is FieldInfo fi) {
                     SetField(obj, fi, value);
@@ -38,6 +39,7 @@ namespace Jmas
                     SetProperty(obj, pi, value);
                 }
             }
+            #nullable restore
         }
 
         public static bool IsAssignableTo(this Type type, Type tar)
