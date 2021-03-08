@@ -229,7 +229,7 @@ interpStringPart
 
 interpValue: IS_LCURL expression interpFormat? RCURL;
 
-interpFormat: COLON interpFormatPart+ ISF_RCURL;
+interpFormat: COLON interpFormatPart+;
 
 interpFormatPart: ISF_NormalChar | ISF_DOUBLERCURL;
 

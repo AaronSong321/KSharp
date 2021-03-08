@@ -486,5 +486,5 @@ ISF_RCURL: '}' {
 PopMode();
 PopMode();
 curlyLevel.Pop();
-};
+} -> type(RCURL);
 ISF_NormalChar: ~('}');

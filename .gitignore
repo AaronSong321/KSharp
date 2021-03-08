@@ -363,4 +363,8 @@ FodyWeavers.xsd
 
 .DS_Store
 
+# Antlr4
 gen/
+*.tokens
+
+
