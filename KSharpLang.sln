@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KSharpFrontend", "KSharpFrontend\KSharpFrontend.csproj", "{C797E0A4-3B69-47CE-9CD0-03B35603EF0C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test-Frontend", "Test-Frontend\Test-Frontend.csproj", "{C425BD7B-91E6-4CC0-B87C-6B409161CEE4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C797E0A4-3B69-47CE-9CD0-03B35603EF0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C797E0A4-3B69-47CE-9CD0-03B35603EF0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C797E0A4-3B69-47CE-9CD0-03B35603EF0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C797E0A4-3B69-47CE-9CD0-03B35603EF0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C425BD7B-91E6-4CC0-B87C-6B409161CEE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C425BD7B-91E6-4CC0-B87C-6B409161CEE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C425BD7B-91E6-4CC0-B87C-6B409161CEE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C425BD7B-91E6-4CC0-B87C-6B409161CEE4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {92D4C176-77E9-4C02-9225-EB5FEE98430A}
+	EndGlobalSection
+EndGlobal
